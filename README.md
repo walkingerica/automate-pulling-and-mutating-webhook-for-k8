@@ -30,8 +30,8 @@ The solution is working with [Amazon API Gateway Mutating Webhook For K8S](https
     1). Check out this repository 
 
     ```sh
-    $ git clone https://github.com/walkingerica/automate-pulling-and-mutating-webhook-for-eks.git
-    $ cd automate-pulling-and-mutating-webhook-for-eks
+    $ git clone https://github.com/walkingerica/automate-pulling-and-mutating-webhook-for-k8.git
+    $ cd automate-pulling-and-mutating-webhook-for-k8
     ```
 
     2). Build the SAM package, replace my_s3_bucket with your S3 bucket name at first.
