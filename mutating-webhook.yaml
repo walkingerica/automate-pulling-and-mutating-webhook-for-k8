@@ -1,0 +1,16 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  name: image-mutating
+webhooks:
+  - name: image.mutating.webhook
+    admissionReviewVersions: ["v1", "v1beta1"]
+    sideEffects: None
+    failurePolicy: Ignore
+    clientConfig:
+      url: https://g9bmn2d485.execute-api.cn-north-1.amazonaws.com.cn
+    rules:
+      - operations: [ "CREATE", "UPDATE" ]
+        apiGroups: [""]
+        apiVersions: ["v1"]
+        resources: ["pods"]

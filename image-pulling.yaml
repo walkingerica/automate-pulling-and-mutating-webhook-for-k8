@@ -1,0 +1,95 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Image Pulling 
+
+Parameters:
+  Region:
+    Type: String
+    Description: The ECR's region.
+  AccessKey:
+    Type: String
+    Description: The ECR's Region's Access Key.
+    NoEcho: true
+  AccessKeySK:
+    Type: String
+    Description: TThe ECR's Region's Access Secret Key.
+    NoEcho: true
+
+Resources:
+  ECRSecertManager:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: ImagePullSecret
+      SecretString:
+        Fn::Join:
+          - ""
+          - - '{"Region": "'
+            - Ref: Region
+            - '", "AccessKey": "'
+            - Ref: AccessKey
+            - '", "AccessSecretKey": "'
+            - Ref: AccessKeySK
+            - '"}'
+  
+  CodeBuildRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+            - Effect: Allow
+              Principal:
+                  Service:
+                    - codebuild.amazonaws.com
+              Action:
+                - sts:AssumeRole    
+      Policies:
+        - PolicyName: ImagePullingPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Action: secretsmanager:GetSecretValue
+                Effect: Allow
+                Resource: '*'
+              - Action:
+                - logs:CreateLogGroup
+                - logs:CreateLogStream
+                - logs:PutLogEvents
+                Effect: Allow
+                Resource: '*'
+  CodeBuildProject:
+    Type: "AWS::CodeBuild::Project"
+    DependsOn:
+      - CodeBuildRole
+    Properties:
+      Name: ImagePullProject
+      Artifacts: 
+        Type: NO_ARTIFACTS
+      Environment:
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/amazonlinux2-x86_64-standard:4.0
+        PrivilegedMode: true
+        Type: LINUX_CONTAINER
+      ServiceRole:
+        Fn::GetAtt:
+          - CodeBuildRole
+          - Arn
+      Source:
+        Type: NO_SOURCE
+        BuildSpec: !Sub |
+          version: 0.2
+          env:
+            variables:
+              DOCKER_IMAGE: "test"
+              NEW_DOCKER_IMAGE: "test"
+            secrets-manager:
+              AWS_DEFAULT_REGION: ImagePullSecret:Region
+              AWS_ACCESS_KEY_ID: ImagePullSecret:AccessKey
+              AWS_SECRET_ACCESS_KEY: ImagePullSecret:AccessSecretKey
+
+          phases:
+            pre_build:
+              commands:
+                - $(aws ecr get-login --region $AWS_DEFAULT_REGION --no-include-email)
+            build:
+              commands:
+                - docker pull $DOCKER_IMAGE && docker tag $DOCKER_IMAGE $NEW_DOCKER_IMAGE && docker push $NEW_DOCKER_IMAGE

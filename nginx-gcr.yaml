@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: "nginx-gcr"
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: nginx-gcr
+  template:
+    metadata:
+      labels:
+        app: "nginx-gcr"
+    spec:
+      containers:
+      - image: k8s.gcr.io/nginx
+        imagePullPolicy: Always
+        name: "nginx"
+        ports:
+        - containerPort: 80
